@@ -183,7 +183,6 @@ class LoginWindow:
     def submit_login(self):
         username = self.entry_username.get().strip()
         password = self.entry_password.get().strip()
-        confirm_password = self.entry_confirm_password.get().strip()
 
         try:
             with sqlite3.connect(self.app.DB_PATH) as conn:
