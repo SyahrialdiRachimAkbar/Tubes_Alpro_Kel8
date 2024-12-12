@@ -2,17 +2,21 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import sqlite3
 import os
+import logging
+
+logging.basicConfig(filename = 'app.log', level = logging.ERROR,
+                    format = '%(asctime)s %(levelname)s %(message)s')
 
 class QuizApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Aplikasi Kuis - Login/Registrasi")
-        self.root.geometry("300x200")
-        self.root.resizable(False, False)
+        
+        self.root.minsize(300, 200)
 
         # Inisialisasi Style
         self.style = ttk.Style()
-        self.style.theme_use('clam')  # Anda bisa mengganti dengan 'default', 'alt', 'classic', dll.
+        self.style.theme_use('clam')
 
         # Path ke subfolder dan file database
         self.DATA_FOLDER = 'database'
@@ -40,15 +44,16 @@ class QuizApp:
             conn.commit()
 
     def create_main_ui(self):
-        # Judul
-        label_title = ttk.Label(self.root, text="Selamat Datang!", font=("Arial", 16))
+        main_frame = ttk.Frame(self.root)
+        main_frame.pack(expand=True, fill='both', padx=10, pady=10)
+
+        label_title = ttk.Label(main_frame, text="Selamat Datang!", font=("Arial", 16))
         label_title.pack(pady=20)
 
-        # Tombol Login dan Registrasi
-        button_login = ttk.Button(self.root, text="Login", width=15, command=self.open_login_window)
+        button_login = ttk.Button(main_frame, text="Login", width=15, command=self.open_login_window)
         button_login.pack(pady=10)
 
-        button_register = ttk.Button(self.root, text="Registrasi", width=15, command=self.open_register_window)
+        button_register = ttk.Button(main_frame, text="Registrasi", width=15, command=self.open_register_window)
         button_register.pack(pady=10)
 
     def open_register_window(self):
@@ -57,46 +62,42 @@ class QuizApp:
     def open_login_window(self):
         LoginWindow(self)
 
+
 class RegisterWindow:
     def __init__(self, app):
         self.app = app
         self.register_window = tk.Toplevel(app.root)
         self.register_window.title("Registrasi")
-        self.register_window.geometry("350x300")
-        self.register_window.resizable(False, False)
+        self.register_window.minsize(350, 300)
 
-        # Inisialisasi Style untuk Window Registrasi
         self.style = ttk.Style()
         self.style.theme_use('clam')
 
-        # Judul
-        label_title = ttk.Label(self.register_window, text="Registrasi", font=("Arial", 16))
+        reg_frame = ttk.Frame(self.register_window)
+        reg_frame.pack(expand=True, fill='both', padx=10, pady=10)
+
+        label_title = ttk.Label(reg_frame, text="Registrasi", font=("Arial", 16))
         label_title.pack(pady=10)
 
-        # Frame registrasi
-        frame_form = ttk.Frame(self.register_window)
-        frame_form.pack(pady=10, padx=10, fill='x')
+        frame_form = ttk.Frame(reg_frame)
+        frame_form.pack(pady=10, fill='x')
 
-        # Username
         label_username = ttk.Label(frame_form, text="Username:")
         label_username.grid(row=0, column=0, padx=5, pady=5, sticky='e')
         self.entry_username = ttk.Entry(frame_form)
         self.entry_username.grid(row=0, column=1, padx=5, pady=5, sticky='w')
 
-        # Password
         label_password = ttk.Label(frame_form, text="Password:")
         label_password.grid(row=1, column=0, padx=5, pady=5, sticky='e')
         self.entry_password = ttk.Entry(frame_form, show="*")
         self.entry_password.grid(row=1, column=1, padx=5, pady=5, sticky='w')
 
-        # Konfirmasi Password
         label_confirm_password = ttk.Label(frame_form, text="Konfirmasi Password:")
         label_confirm_password.grid(row=2, column=0, padx=5, pady=5, sticky='e')
         self.entry_confirm_password = ttk.Entry(frame_form, show="*")
         self.entry_confirm_password.grid(row=2, column=1, padx=5, pady=5, sticky='w')
 
-        # Submit
-        button_submit = ttk.Button(self.register_window, text="Daftar", command=self.submit_registration)
+        button_submit = ttk.Button(reg_frame, text="Daftar", command=self.submit_registration)
         button_submit.pack(pady=20)
 
     def submit_registration(self):
@@ -117,8 +118,6 @@ class RegisterWindow:
         if password != confirm_password:
             messagebox.showerror("Error", "Password dan konfirmasi tidak cocok.")
             return
-
-        # Validasi karakter username (hanya huruf dan angka)
         if not username.isalnum():
             messagebox.showerror("Error", "Username hanya boleh mengandung huruf dan angka.")
             return
@@ -133,53 +132,79 @@ class RegisterWindow:
         except sqlite3.IntegrityError:
             messagebox.showerror("Error", "Username sudah digunakan. Silakan pilih username lain.")
         except sqlite3.Error as e:
+            logging.error(f"Database error saat registrasi: {e}")
             messagebox.showerror("Error", f"Terjadi kesalahan pada database: {e}")
+
 
 class LoginWindow:
     def __init__(self, app):
         self.app = app
         self.login_window = tk.Toplevel(app.root)
         self.login_window.title("Login")
-        self.login_window.geometry("350x250")
-        self.login_window.resizable(False, False)
+        self.login_window.minsize(350, 250)
+        self.login_window.rowconfigure(0, weight=1)
+        self.login_window.columnconfigure(0, weight=1)
 
-        # Buat container frame yang akan memenuhi window
         container = ttk.Frame(self.login_window)
-        container.pack(expand=True, fill='both')  # Frame ini akan melebar dan memenuhi window
+        container.grid(row=0, column=0, sticky='nsew')
+        
 
-        # Judul
-        label_title = ttk.Label(container, text="Login", font=("Arial", 16))
-        label_title.pack(pady=10)
+        container.rowconfigure(0, weight=1)
+        container.columnconfigure(0, weight=1)
 
-        # Frame untuk form login (jangan gunakan fill='x')
-        frame_form = ttk.Frame(container)
-        frame_form.pack(pady=10, padx=10)  # Tidak menggunakan fill='x', sehingga frame akan sesuai konten
+        frame_center = ttk.Frame(container)
+        frame_center.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
 
-        # Username
+
+        frame_center.rowconfigure(1, weight=1) 
+        frame_center.columnconfigure(0, weight=1)
+
+        label_title = ttk.Label(frame_center, text="Login", font=("Arial", 16))
+        label_title.grid(row=0, column=0, pady=10)
+
+        frame_form = ttk.Frame(frame_center)
+        frame_form.grid(row=1, column=0, sticky='nsew', pady=10)
+
+        frame_form.columnconfigure(1, weight=1)
+
         label_username = ttk.Label(frame_form, text="Username:")
         label_username.grid(row=0, column=0, padx=5, pady=5, sticky='e')
         self.entry_username = ttk.Entry(frame_form)
-        self.entry_username.grid(row=0, column=1, padx=5, pady=5)
+        self.entry_username.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-        # Password
         label_password = ttk.Label(frame_form, text="Password:")
         label_password.grid(row=1, column=0, padx=5, pady=5, sticky='e')
         self.entry_password = ttk.Entry(frame_form, show="*")
-        self.entry_password.grid(row=1, column=1, padx=5, pady=5)
+        self.entry_password.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
 
-        # Tombol Login
-        button_login = ttk.Button(container, text="Login", command=self.submit_login)
-        button_login.pack(pady=20)
+        button_login = ttk.Button(frame_center, text="Login", command=self.submit_login)
+        button_login.grid(row=2, column=0, pady=20)
 
     def submit_login(self):
         username = self.entry_username.get().strip()
         password = self.entry_password.get().strip()
-        # Implementasi login Anda di sini
-        # ...
+        confirm_password = self.entry_confirm_password.get().strip()
+
+        try:
+            with sqlite3.connect(self.app.DB_PATH) as conn:
+                cursor = conn.sursor()
+                cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
+                conn.commit()
+            messagebox.showinfo("Sukses", "Registrasi berhasil! Anda dapat login sekarang.")
+            self.register_window.destroy()
+        except sqlite3.IntegrityError:
+            logging.error("Username sudah ada di database")
+            messagebox.showerror("Error", "Username anda sudah digunakan. Silahkan gunakan username lain")
+        except sqlite3.Error as e:
+            logging.error(f"Database error saat registrasi: {e}")
+            messagebox.showerror("Error", f"Terjadi kesalahan pada database: {e}")        
         if username and password:
             messagebox.showinfo("Info", "Login dicoba!")
         else:
             messagebox.showerror("Error", "Semua field harus diisi.")
+
+
+
 
 if __name__ == "__main__":
     root = tk.Tk()
