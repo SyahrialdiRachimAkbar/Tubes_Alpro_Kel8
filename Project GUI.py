@@ -10,6 +10,10 @@ class QuizApp:
         self.root.geometry("300x200")
         self.root.resizable(False, False)
 
+        # Inisialisasi Style
+        self.style = ttk.Style()
+        self.style.theme_use('clam')  # Anda bisa mengganti dengan 'default', 'alt', 'classic', dll.
+
         # Path ke subfolder dan file database
         self.DATA_FOLDER = 'database'
         self.DB_PATH = os.path.join(self.DATA_FOLDER, 'users.db')
@@ -60,6 +64,10 @@ class RegisterWindow:
         self.register_window.title("Registrasi")
         self.register_window.geometry("350x300")
         self.register_window.resizable(False, False)
+
+        # Inisialisasi Style untuk Window Registrasi
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
 
         # Judul
         label_title = ttk.Label(self.register_window, text="Registrasi", font=("Arial", 16))
@@ -135,53 +143,43 @@ class LoginWindow:
         self.login_window.geometry("350x250")
         self.login_window.resizable(False, False)
 
+        # Buat container frame yang akan memenuhi window
+        container = ttk.Frame(self.login_window)
+        container.pack(expand=True, fill='both')  # Frame ini akan melebar dan memenuhi window
+
         # Judul
-        label_title = ttk.Label(self.login_window, text="Login", font=("Arial", 16))
+        label_title = ttk.Label(container, text="Login", font=("Arial", 16))
         label_title.pack(pady=10)
 
-        # Frame login
-        frame_form = ttk.Frame(self.login_window)
-        frame_form.pack(pady=10, padx=10, fill='x')
+        # Frame untuk form login (jangan gunakan fill='x')
+        frame_form = ttk.Frame(container)
+        frame_form.pack(pady=10, padx=10)  # Tidak menggunakan fill='x', sehingga frame akan sesuai konten
 
         # Username
         label_username = ttk.Label(frame_form, text="Username:")
         label_username.grid(row=0, column=0, padx=5, pady=5, sticky='e')
         self.entry_username = ttk.Entry(frame_form)
-        self.entry_username.grid(row=0, column=1, padx=5, pady=5, sticky='w')
+        self.entry_username.grid(row=0, column=1, padx=5, pady=5)
 
         # Password
         label_password = ttk.Label(frame_form, text="Password:")
         label_password.grid(row=1, column=0, padx=5, pady=5, sticky='e')
         self.entry_password = ttk.Entry(frame_form, show="*")
-        self.entry_password.grid(row=1, column=1, padx=5, pady=5, sticky='w')
+        self.entry_password.grid(row=1, column=1, padx=5, pady=5)
 
-        # Submit
-        button_login = ttk.Button(self.login_window, text="Login", command=self.submit_login)
+        # Tombol Login
+        button_login = ttk.Button(container, text="Login", command=self.submit_login)
         button_login.pack(pady=20)
 
     def submit_login(self):
         username = self.entry_username.get().strip()
         password = self.entry_password.get().strip()
-
-        # Validasi input
-        if not username or not password:
+        # Implementasi login Anda di sini
+        # ...
+        if username and password:
+            messagebox.showinfo("Info", "Login dicoba!")
+        else:
             messagebox.showerror("Error", "Semua field harus diisi.")
-            return
-
-        try:
-            with sqlite3.connect(self.app.DB_PATH) as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?', (username, password))
-                result = cursor.fetchone()
-
-            if result:
-                messagebox.showinfo("Login Sukses", f"Selamat datang, {username}!")
-                self.login_window.destroy()
-                # Di sini Anda bisa menambahkan kode untuk membuka halaman kuis
-            else:
-                messagebox.showerror("Login Gagal", "Username atau Password salah.")
-        except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Terjadi kesalahan pada database: {e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
