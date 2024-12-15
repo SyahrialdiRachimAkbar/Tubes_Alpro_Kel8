@@ -186,7 +186,7 @@ class LoginWindow:
 
         try:
             with sqlite3.connect(self.app.DB_PATH) as conn:
-                cursor = conn.sursor()
+                cursor = conn.cursor()
                 cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
                 conn.commit()
             messagebox.showinfo("Sukses", "Registrasi berhasil! Anda dapat login sekarang.")
@@ -204,6 +204,190 @@ class LoginWindow:
 
 
 
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = QuizApp(root)
+    root.mainloop()
+
+
+
+class ManageQuestionsWindow:
+    def __init__(self, app):
+        self.app = app
+        self.window = tk.Toplevel(app.root)
+        self.window.title("Kelola Soal")
+        self.window.minsize(400, 400)
+
+        # Tabel soal
+        self.tree = ttk.Treeview(self.window, columns=("ID", "Soal", "Jawaban", "Opsi"), show="headings")
+        self.tree.heading("ID", text="ID")
+        self.tree.heading("Soal", text="Soal")
+        self.tree.heading("Jawaban", text="Jawaban")
+        self.tree.heading("Opsi", text="Opsi")
+        self.tree.pack(expand=True, fill='both', padx=10, pady=10)
+
+        # Tombol CRUD
+        button_frame = ttk.Frame(self.window)
+        button_frame.pack(fill='x', padx=10, pady=10)
+
+        ttk.Button(button_frame, text="Tambah Soal", command=self.add_question).pack(side="left", padx=5)
+        ttk.Button(button_frame, text="Edit Soal", command=self.edit_question).pack(side="left", padx=5)
+        ttk.Button(button_frame, text="Hapus Soal", command=self.delete_question).pack(side="left", padx=5)
+
+        self.load_questions()
+
+    def load_questions(self):
+        """Memuat soal dari database dan menampilkan di tabel."""
+        for row in self.tree.get_children():
+            self.tree.delete(row)
+
+        with sqlite3.connect(self.app.DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("CREATE TABLE IF NOT EXISTS questions (id INTEGER PRIMARY KEY, question TEXT, answer TEXT, options TEXT)")
+            conn.commit()
+
+            cursor.execute("SELECT * FROM questions")
+            rows = cursor.fetchall()
+            for row in rows:
+                self.tree.insert('', 'end', values=row)
+
+    def add_question(self):
+        """Menambah soal baru."""
+        AddQuestionWindow(self)
+
+    def edit_question(self):
+        """Mengedit soal yang dipilih."""
+        selected_item = self.tree.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Pilih soal terlebih dahulu!")
+            return
+
+        item = self.tree.item(selected_item[0])['values']
+        EditQuestionWindow(self, item)
+
+    def delete_question(self):
+        """Menghapus soal yang dipilih."""
+        selected_item = self.tree.selection()
+        if not selected_item:
+            messagebox.showerror("Error", "Pilih soal terlebih dahulu!")
+            return
+
+        item = self.tree.item(selected_item[0])['values']
+        with sqlite3.connect(self.app.DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM questions WHERE id = ?", (item[0],))
+            conn.commit()
+
+        self.tree.delete(selected_item[0])
+        messagebox.showinfo("Info", "Soal berhasil dihapus!")
+
+class AddQuestionWindow:
+    def __init__(self, manage_window):
+        self.manage_window = manage_window
+        self.window = tk.Toplevel(manage_window.window)
+        self.window.title("Tambah Soal")
+        self.window.minsize(400, 300)
+
+        ttk.Label(self.window, text="Soal:").pack(pady=5)
+        self.entry_question = ttk.Entry(self.window)
+        self.entry_question.pack(fill='x', padx=10)
+
+        ttk.Label(self.window, text="Jawaban:").pack(pady=5)
+        self.entry_answer = ttk.Entry(self.window)
+        self.entry_answer.pack(fill='x', padx=10)
+
+        ttk.Label(self.window, text="Opsi (pisahkan dengan koma):").pack(pady=5)
+        self.entry_options = ttk.Entry(self.window)
+        self.entry_options.pack(fill='x', padx=10)
+
+        ttk.Button(self.window, text="Simpan", command=self.save_question).pack(pady=20)
+
+    def save_question(self):
+        """Menyimpan soal baru ke database."""
+        question = self.entry_question.get().strip()
+        answer = self.entry_answer.get().strip()
+        options = self.entry_options.get().strip()
+
+        if not question or not answer or not options:
+            messagebox.showerror("Error", "Semua field harus diisi.")
+            return
+
+        with sqlite3.connect(self.manage_window.app.DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO questions (question, answer, options) VALUES (?, ?, ?)", (question, answer, options))
+            conn.commit()
+
+        messagebox.showinfo("Info", "Soal berhasil ditambahkan!")
+        self.manage_window.load_questions()
+        self.window.destroy()
+
+class EditQuestionWindow:
+    def __init__(self, manage_window, selected_question):
+        self.manage_window = manage_window
+        self.selected_question = selected_question
+        self.window = tk.Toplevel(manage_window.window)
+        self.window.title("Edit Soal")
+        self.window.minsize(400, 300)
+
+        ttk.Label(self.window, text="Edit Soal", font=("Arial", 14)).pack(pady=10)
+
+        ttk.Label(self.window, text="Soal:").pack(pady=5)
+        self.entry_question = ttk.Entry(self.window)
+        self.entry_question.insert(0, selected_question[1])
+        self.entry_question.pack(fill='x', padx=10)
+
+        ttk.Label(self.window, text="Jawaban:").pack(pady=5)
+        self.entry_answer = ttk.Entry(self.window)
+        self.entry_answer.insert(0, selected_question[2])
+        self.entry_answer.pack(fill='x', padx=10)
+
+        ttk.Label(self.window, text="Opsi (pisahkan dengan koma):").pack(pady=5)
+        self.entry_options = ttk.Entry(self.window)
+        self.entry_options.insert(0, selected_question[3])
+        self.entry_options.pack(fill='x', padx=10)
+
+        ttk.Button(self.window, text="Simpan Perubahan", command=self.save_changes).pack(pady=20)
+
+    def save_changes(self):
+        """Menyimpan perubahan pada soal yang diedit."""
+        question_id = self.selected_question[0]
+        updated_question = self.entry_question.get().strip()
+        updated_answer = self.entry_answer.get().strip()
+        updated_options = self.entry_options.get().strip()
+
+        if not updated_question or not updated_answer or not updated_options:
+            messagebox.showerror("Error", "Semua field harus diisi.")
+            return
+
+        with sqlite3.connect(self.manage_window.app.DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE questions
+                SET question = ?, answer = ?, options = ?
+                WHERE id = ?
+            """, (updated_question, updated_answer, updated_options, question_id))
+            conn.commit()
+
+        self.manage_window.load_questions()
+        messagebox.showinfo("Sukses", "Soal berhasil diperbarui!")
+        self.window.destroy()
+
+class QuizApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Aplikasi Pengelolaan Soal Kuis")
+        self.root.minsize(400, 300)
+
+        # Path database
+        self.DB_PATH = "questions.db"  # Lokasi database SQLite
+
+        # Tombol untuk membuka pengelolaan soal
+        ttk.Button(self.root, text="Kelola Soal", command=self.open_manage_questions).pack(pady=20)
+
+    def open_manage_questions(self):
+        """Membuka jendela pengelolaan soal."""
+        ManageQuestionsWindow(self)
 
 if __name__ == "__main__":
     root = tk.Tk()
