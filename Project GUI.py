@@ -1,8 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sqlite3
+import hashlib
 import os
 import logging
+from database import Database
 
 logging.basicConfig(filename = 'app.log', level = logging.ERROR,
                     format = '%(asctime)s %(levelname)s %(message)s')
@@ -122,18 +124,27 @@ class RegisterWindow:
             messagebox.showerror("Error", "Username hanya boleh mengandung huruf dan angka.")
             return
 
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+
         try:
             with sqlite3.connect(self.app.DB_PATH) as conn:
                 cursor = conn.cursor()
-                cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
+                cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
                 conn.commit()
             messagebox.showinfo("Sukses", "Registrasi berhasil! Anda dapat login sekarang.")
             self.register_window.destroy()
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as e:
             messagebox.showerror("Error", "Username sudah digunakan. Silakan pilih username lain.")
+            logging.error(f"Username sudah ada di database: {e}")
+        except sqlite3.OperationalError as e:
+            messagebox.showerror("Error", "Gagal menyimpan data ke database.")
+            logging.error(f"Database error: {e}")
         except sqlite3.Error as e:
             logging.error(f"Database error saat registrasi: {e}")
             messagebox.showerror("Error", f"Terjadi kesalahan pada database: {e}")
+        else:
+            messagebox.showinfo("Info", "Registrasi berhasil!")
+            self.register_window.destroy()
 
 
 class LoginWindow:
@@ -177,25 +188,28 @@ class LoginWindow:
         self.entry_password = ttk.Entry(frame_form, show="*")
         self.entry_password.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
 
-        button_login = ttk.Button(frame_center, text="Login", command=self.submit_login)
+        button_login = ttk.Button(frame_center, text="Login", command=self.submit_login)    
         button_login.grid(row=2, column=0, pady=20)
 
     def submit_login(self):
         username = self.entry_username.get().strip()
         password = self.entry_password.get().strip()
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
         try:
             with sqlite3.connect(self.app.DB_PATH) as conn:
                 cursor = conn.cursor()
-                cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
-                conn.commit()
-            messagebox.showinfo("Sukses", "Registrasi berhasil! Anda dapat login sekarang.")
-            self.register_window.destroy()
-        except sqlite3.IntegrityError:
-            logging.error("Username sudah ada di database")
-            messagebox.showerror("Error", "Username anda sudah digunakan. Silahkan gunakan username lain")
+                cursor.execute('SELECT password FROM users WHERE username = ? ', (username,))
+                stored_hashed_passwrod = cursor.fetchone()[0]
+                
+
+                if stored_hashed_passwrod == hashed_password:
+                    messagebox.showinfo("Sukses", "Login berhasil!")
+                    self.login_window.destroy()
+                else:
+                    messagebox.showerror("Error", "Username atau password salah.")
         except sqlite3.Error as e:
-            logging.error(f"Database error saat registrasi: {e}")
+            logging.error(f"Database error saat login: {e}")
             messagebox.showerror("Error", f"Terjadi kesalahan pada database: {e}")        
         if username and password:
             messagebox.showinfo("Info", "Login dicoba!")
@@ -380,7 +394,8 @@ class QuizApp:
         self.root.minsize(400, 300)
 
         # Path database
-        self.DB_PATH = "questions.db"  # Lokasi database SQLite
+        self.DATA_FOLDER = 'database'
+        self.DB_PATH = os.path.join(self.DATA_FOLDER, 'questions.db')
 
         # Tombol untuk membuka pengelolaan soal
         ttk.Button(self.root, text="Kelola Soal", command=self.open_manage_questions).pack(pady=20)
@@ -393,3 +408,5 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = QuizApp(root)
     root.mainloop()
+
+
