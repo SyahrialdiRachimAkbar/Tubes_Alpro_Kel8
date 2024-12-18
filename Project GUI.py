@@ -501,3 +501,27 @@ class PlayQuizWindow:
 
         ttk.Button(self.window, text="Tutup", command=self.window.destroy).pack(pady=20)
 
+class QuizApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Aplikasi Pengelolaan dan Pemainan Kuis")
+        self.root.minsize(400, 300)
+
+        self.DATA_FOLDER = 'database'
+        self.DB_PATH = os.path.join(self.DATA_FOLDER, 'questions.db')
+
+        ttk.Button(self.root, text="Kelola Soal", command=self.open_manage_questions).pack(pady=20)
+        ttk.Button(self.root, text="Mulai Kuis", command=self.start_quiz).pack(pady=20)
+
+    def open_manage_questions(self):
+        ManageQuestionsWindow(self)
+
+    def start_quiz(self):
+        PlayQuizWindow(self)
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = QuizApp(root)
+    root.mainloop()
+
