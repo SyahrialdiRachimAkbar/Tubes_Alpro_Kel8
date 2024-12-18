@@ -409,4 +409,25 @@ if __name__ == "__main__":
     app = QuizApp(root)
     root.mainloop()
 
+class PlayQuizWindow:
+    def __init__(self, app):
+        self.app = app
+        self.window = tk.Toplevel(app.root)
+        self.window.title("Mulai Kuis")
+        self.window.minsize(400, 300)
+
+        self.current_question_index = 0
+        self.score = 0
+        self.questions = []
+
+        # Memuat soal dari database
+        self.load_questions()
+
+        if not self.questions:
+            messagebox.showinfo("Info", "Tidak ada soal untuk dimainkan.")
+            self.window.destroy()
+            return
+
+        # Menampilkan pertanyaan
+        self.display_question()
 
