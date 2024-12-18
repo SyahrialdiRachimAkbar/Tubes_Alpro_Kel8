@@ -431,3 +431,29 @@ class PlayQuizWindow:
         # Menampilkan pertanyaan
         self.display_question()
 
+    def load_questions(self):
+        with sqlite3.connect(self.app.DB_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT question, answer, options FROM questions")
+            rows = cursor.fetchall()
+            for row in rows:
+                question, answer, options = row
+                options_list = options.split(',')
+                self.questions.append({
+                    'question': question,
+                    'answer': answer,
+                    'options': options_list
+                })
+
+    def display_question(self):
+        # Membersihkan window
+        for widget in self.window.winfo_children():
+            widget.destroy()
+
+        question_data = self.questions[self.current_question_index]
+        question_text = question_data['question']
+        options = question_data['options']
+
+        # Menampilkan pertanyaan
+        ttk.Label(self.window, text=f"Soal {self.current_question_index + 1}/{len(self.questions)}:", font=("Arial", 14)).pack(pady=10)
+        ttk.Label(self.window, text=question_text, wraplength=350, font=("Arial", 12)).pack(pady=10)
