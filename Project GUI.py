@@ -457,3 +457,47 @@ class PlayQuizWindow:
         # Menampilkan pertanyaan
         ttk.Label(self.window, text=f"Soal {self.current_question_index + 1}/{len(self.questions)}:", font=("Arial", 14)).pack(pady=10)
         ttk.Label(self.window, text=question_text, wraplength=350, font=("Arial", 12)).pack(pady=10)
+
+
+     # Menampilkan opsi jawaban
+        self.selected_answer = tk.StringVar()
+        for option in options:
+            ttk.Radiobutton(
+                self.window,
+                text=option.strip(),
+                value=option.strip(),
+                variable=self.selected_answer
+            ).pack(anchor='w', padx=20, pady=5)
+
+        # Tombol untuk melanjutkan
+        ttk.Button(self.window, text="Jawab", command=self.submit_answer).pack(pady=20)
+
+    def submit_answer(self):
+        selected_answer = self.selected_answer.get()
+
+        if not selected_answer:
+            messagebox.showerror("Error", "Pilih jawaban terlebih dahulu.")
+            return
+
+        correct_answer = self.questions[self.current_question_index]['answer']
+
+        if selected_answer == correct_answer:
+            self.score += 1
+
+        self.current_question_index += 1
+
+        if self.current_question_index < len(self.questions):
+            self.display_question()
+        else:
+            self.show_score()
+
+    def show_score(self):
+        # Membersihkan window
+        for widget in self.window.winfo_children():
+            widget.destroy()
+
+        ttk.Label(self.window, text="Kuis Selesai!", font=("Arial", 16)).pack(pady=10)
+        ttk.Label(self.window, text=f"Skor Anda: {self.score}/{len(self.questions)}", font=("Arial", 14)).pack(pady=10)
+
+        ttk.Button(self.window, text="Tutup", command=self.window.destroy).pack(pady=20)
+
